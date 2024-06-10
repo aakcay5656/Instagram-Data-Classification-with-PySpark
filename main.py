@@ -1,17 +1,3 @@
-import pandas as pd
-
-# Dosya yolunu al
-dosya_yolu = input("Dosya yolunu giriniz:")
-
-# JSON dosyasını Pandas DataFrame olarak oku
-obj = pd.read_json(dosya_yolu, orient='values')
-print(obj)
-
-# Geçici olarak Pandas DataFrame'i bir CSV dosyasına kaydet
-name = input("CSV dosyasının ismini giriniz:")
-name = name + ".csv"
-obj.to_csv(name)
-print(name)
 
 # Spark oturumunu oluşturma
 
@@ -168,9 +154,9 @@ plt.show()
 #%%
 # Etiketsiz veri kümesi ile çalışmak
 
-a = input("Analiz Edilecek Dosyanın Yolunu Giriniz:")
+test_dosyasi = input("Analiz Edilecek Dosyanın Yolunu Giriniz:")
 
-df_unlabeled = spark.read.option('header', 'true').option('encoding', 'utf-8').csv(a)
+df_unlabeled = spark.read.option('header', 'true').option('encoding', 'utf-8').csv(test_dosyasi)
 
 # Veri hazırlığı
 df_unlabeled = df_unlabeled.withColumn("only_str", lower(col('caption')))
