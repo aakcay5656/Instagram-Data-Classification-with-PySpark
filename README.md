@@ -1,6 +1,6 @@
 # Instagram Data Classification with PySpark
 
-This project aims to classify Instagram captions into different categories using various machine learning models in PySpark. The dataset contains captions labeled into different categories such as finance, sports, art, technology, and personal. The classification models used include Decision Tree, Random Forest, Naive Bayes, and Logistic Regression.
+This project focuses on classifying Instagram captions into different categories using various machine learning models in PySpark. The dataset contains captions labeled into categories such as finance, sports, art, technology, and personal. The classification models used include Decision Tree, Random Forest, Naive Bayes, and Logistic Regression.
 
 ## Table of Contents
 - [Installation](#installation)
@@ -10,6 +10,7 @@ This project aims to classify Instagram captions into different categories using
 - [Evaluation](#evaluation)
 - [Results](#results)
 - [Visualization](#visualization)
+- [Unlabeled Data Analysis](#unlabeled-data-analysis)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -79,6 +80,71 @@ ax1.tick_params(axis='y', labelcolor=color)
 fig.tight_layout()  # Layout adjustments
 plt.title("Model Performance: Accuracy ")
 plt.show()
+```
+
+## Unlabeled Data Analysis
+
+The project also includes the capability to analyze unlabeled data. Given a new dataset without labels, the models can predict the categories of the captions.
+
+```python
+# Analyzing Unlabeled Data
+test_dosyasi = input("Enter the path of the dataset to be analyzed:")
+
+df_unlabeled = spark.read.option('header', 'true').option('encoding', 'utf-8').csv(test_dosyasi)
+
+# Data preparation
+df_unlabeled = df_unlabeled.withColumn("only_str", lower(col('caption')))
+df_unlabeled = df_unlabeled.withColumn("only_str", regexp_replace(col('only_str'), '\d+', ''))
+df_unlabeled = df_unlabeled.withColumn("only_str", regexp_replace(col('only_str'), '[^\w\s]', ' '))
+
+# Feature engineering
+unlabeled_transformed = pipeline_model.transform(df_unlabeled)
+
+# Making predictions
+all_unlabeled_predictions = None
+
+for model_name, model in models.items():
+    model_fit = model.fit(countVectorizer_train)
+    predictions = model_fit.transform(unlabeled_transformed)
+    
+    if all_unlabeled_predictions is None:
+        all_unlabeled_predictions = predictions.withColumnRenamed("prediction", f"{model_name}_prediction")
+    else:
+        all_unlabeled_predictions = all_unlabeled_predictions.join(predictions.select("caption", col("prediction").alias(f"{model_name}_prediction")), on="caption")
+        
+all_unlabeled_predictions = all_unlabeled_predictions.withColumn("Decision Tree_prediction",
+    when(col("Decision Tree_prediction") == 1, "finans")
+    .when(col("Decision Tree_prediction") == 2, "spor")
+    .when(col("Decision Tree_prediction") == 3, "sanat")
+    .when(col("Decision Tree_prediction") == 4, "teknoloji")
+    .when(col("Decision Tree_prediction") == 5, "kişisel")
+    .otherwise("other"))
+all_unlabeled_predictions = all_unlabeled_predictions.withColumn("Random Forest_prediction",
+    when(col("Random Forest_prediction") == 1, "finans")
+    .when(col("Random Forest_prediction") == 2, "spor")
+    .when(col("Random Forest_prediction") == 3, "sanat")
+    .when(col("Random Forest_prediction") == 4, "teknoloji")
+    .when(col("Random Forest_prediction") == 5, "kişisel")
+    .otherwise("other"))
+
+all_unlabeled_predictions = all_unlabeled_predictions.withColumn("Naive Bayes_prediction",
+    when(col("Naive Bayes_prediction") == 1, "finans")
+    .when(col("Naive Bayes_prediction") == 2, "spor")
+    .when(col("Naive Bayes_prediction") == 3, "sanat")
+    .when(col("Naive Bayes_prediction") == 4, "teknoloji")
+    .when(col("Naive Bayes_prediction") == 5, "kişisel")
+    .otherwise("other"))
+all_unlabeled_predictions = all_unlabeled_predictions.withColumn("Logistic Regression_prediction",
+    when(col("Logistic Regression_prediction") == 1, "finans")
+    .when(col("Logistic Regression_prediction") == 2, "spor")
+    .when(col("Logistic Regression_prediction") == 3, "sanat")
+    .when(col("Logistic Regression_prediction") == 4, "teknoloji")
+    .when(col("Logistic Regression_prediction") == 5, "kişisel")
+    .otherwise("other"))
+
+# Saving the results
+all_unlabeled_predictions.select("caption", "Decision Tree_prediction", "Random Forest_prediction", "Naive Bayes_prediction", "Logistic Regression_prediction") \
+    .toPandas().to_csv("predictions_unlabeled.csv", index=False)
 ```
 
 ## Contributing
